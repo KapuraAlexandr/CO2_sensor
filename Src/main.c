@@ -687,27 +687,29 @@ void Start_uart3_Rx_handle(void const * argument)
 
 void USART3_IRQHandler(void)
 {
-//	static uint8_t	usart3_counter = 0x00;
-//
-//	portBASE_TYPE xHigherPriorityTaskWoken;
-//	xHigherPriorityTaskWoken = pdFALSE;
-//	uint8_t usart3_Rx_data = 0x00;
-//
-//	HAL_UART_IRQHandler(&huart3);
-//	usart3_Rx_data = (uint8_t) huart3.Instance->DR;
-//	usart3_counter++;
+	static uint8_t	usart3_counter = 0x00;
 
-//	if (0x08 == usart3_counter)
-//	{
-//		usart3_counter = 0x00;
-//		xSemaphoreGiveFromISR( usart3_semHandle, &xHigherPriorityTaskWoken );
-//		if(pdTRUE == xHigherPriorityTaskWoken)
-//		{
-//			HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_SET);
-//			HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_SET);
-//		}
-//
-//	}
+	portBASE_TYPE xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+	uint8_t usart3_Rx_data = 0x00;
+
+	HAL_UART_IRQHandler(&huart3);
+	usart3_Rx_data = (uint8_t) huart3.Instance->DR;
+	usart3_counter++;
+
+	if (0x08 == usart3_counter)
+	{
+		usart3_counter = 0x00;
+		xSemaphoreGiveFromISR( usart3_semHandle, &xHigherPriorityTaskWoken );
+		if(pdTRUE == xHigherPriorityTaskWoken)
+		{
+			HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_SET);
+		}
+
+	}
+
+	/*hglkrhglkhrglkhRLGKHSkhsrkh*/
 
 }
 
