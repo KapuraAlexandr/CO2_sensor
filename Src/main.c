@@ -697,17 +697,17 @@ void USART3_IRQHandler(void)
 	usart3_Rx_data = (uint8_t) huart3.Instance->DR;
 	usart3_counter++;
 
-	if (0x08 == usart3_counter)
-	{
-		usart3_counter = 0x00;
-		xSemaphoreGiveFromISR( usart3_semHandle, &xHigherPriorityTaskWoken );
-		if(pdTRUE == xHigherPriorityTaskWoken)
-		{
-			HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_SET);
-		}
-
-	}
+//	if (0x08 == usart3_counter)
+//	{
+//		usart3_counter = 0x00;
+//		xSemaphoreGiveFromISR( usart3_semHandle, &xHigherPriorityTaskWoken );
+//		if(pdTRUE == xHigherPriorityTaskWoken)
+//		{
+//			HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_SET);
+//			HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_SET);
+//		}
+//
+//	}
 
 }
 
