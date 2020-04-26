@@ -687,15 +687,15 @@ void Start_uart3_Rx_handle(void const * argument)
 
 void USART3_IRQHandler(void)
 {
-	static uint8_t	usart3_counter = 0x00;
-
-	portBASE_TYPE xHigherPriorityTaskWoken;
-	xHigherPriorityTaskWoken = pdFALSE;
-	uint8_t usart3_Rx_data = 0x00;
-
-	HAL_UART_IRQHandler(&huart3);
-	usart3_Rx_data = (uint8_t) huart3.Instance->DR;
-	usart3_counter++;
+//	static uint8_t	usart3_counter = 0x00;
+//
+//	portBASE_TYPE xHigherPriorityTaskWoken;
+//	xHigherPriorityTaskWoken = pdFALSE;
+//	uint8_t usart3_Rx_data = 0x00;
+//
+//	HAL_UART_IRQHandler(&huart3);
+//	usart3_Rx_data = (uint8_t) huart3.Instance->DR;
+//	usart3_counter++;
 
 //	if (0x08 == usart3_counter)
 //	{
