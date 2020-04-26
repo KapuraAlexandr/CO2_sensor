@@ -1,0 +1,5 @@
+main_helper.c:16:6:SystemClock_Config	104	static
+main_helper.c:67:6:MX_I2C1_Init	8	static
+main_helper.c:101:6:MX_I2S3_Init	8	static
+main_helper.c:135:6:MX_SPI1_Init	8	static
+main_helper.c:173:6:MX_GPIO_Init	56	static
