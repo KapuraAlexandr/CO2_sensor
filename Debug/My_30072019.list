@@ -30180,13 +30180,13 @@ void USART3_IRQHandler(void)
  800b3a6:	b2da      	uxtb	r2, r3
  800b3a8:	4b12      	ldr	r3, [pc, #72]	; (800b3f4 <USART3_IRQHandler+0x70>)
  800b3aa:	701a      	strb	r2, [r3, #0]
+
 	if (0x08 == usart3_counter)
  800b3ac:	4b11      	ldr	r3, [pc, #68]	; (800b3f4 <USART3_IRQHandler+0x70>)
  800b3ae:	781b      	ldrb	r3, [r3, #0]
  800b3b0:	2b08      	cmp	r3, #8
  800b3b2:	d118      	bne.n	800b3e6 <USART3_IRQHandler+0x62>
 	{
-
 		usart3_counter = 0x00;
  800b3b4:	4b0f      	ldr	r3, [pc, #60]	; (800b3f4 <USART3_IRQHandler+0x70>)
  800b3b6:	2200      	movs	r2, #0
