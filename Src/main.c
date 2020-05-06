@@ -41,6 +41,14 @@ typedef struct
 #define	USART2_QUEUE_LENGTH	1
 #define	USART2_QUEUE_ITEM_SIZE	sizeof(uart2_data)
 
+#define MB_FRAME_RX_IDLE						0X00
+#define MB_FRAME_RX_STARTED						0X01
+#define	MB_FRAME_RX_READ_COILS_FRAME 			0X02
+#define	MB_FRAME_RX_READ_INREG_FRAME 			0X03
+#define	MB_FRAME_RX_COILS_FRAME_FINISHED_OK		0x09
+#define	MB_FRAME_RX_INREG_FRAME_FINISHED_OK		0x0A
+
+#define HMI_SLAVE_ADDR_U3				0x01
 
 /* USER CODE END PD */
 
@@ -63,8 +71,11 @@ osThreadId myLED_TaskHandle;
 osThreadId myButton_TaskHandle;
 osThreadId uart2_Rx_handleHandle;
 osThreadId uart3_Rx_handleHandle;
-osMessageQId usart3_MQ1Handle;
+osThreadId CO2_u6_Rx_handlHandle;
+osMessageQId HMI_ISR_usart3_Q1Handle;
+osMessageQId CO2_ISR_usart6_Q1Handle;
 osSemaphoreId usart2_semHandle;
+osSemaphoreId usart3_semHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -82,6 +93,7 @@ void StartLED_Task(void const * argument);
 void StartButton_Task(void const * argument);
 void Start_uart2_Rx_handle(void const * argument);
 void Start_uart3_Rx_handle(void const * argument);
+void Start_CO2_Rx_handle(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -137,6 +149,8 @@ int main(void)
   /* definition and creation of usart2_sem */
   osSemaphoreDef(usart2_sem);
   usart2_semHandle = osSemaphoreCreate(osSemaphore(usart2_sem), 1);
+  osSemaphoreDef(usart3_sem);
+  usart3_semHandle = osSemaphoreCreate(osSemaphore(usart3_sem), 1);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -147,9 +161,13 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
-  /* definition and creation of usart3_MQ1 */
-  osMessageQDef(usart3_MQ1, 8, uint8_t);
-  usart3_MQ1Handle = osMessageCreate(osMessageQ(usart3_MQ1), NULL);
+  /* definition and creation of HMI_ISR_usart3_Q1 */
+  osMessageQDef(HMI_ISR_usart3_Q1, 1, uint8_t);
+  HMI_ISR_usart3_Q1Handle = osMessageCreate(osMessageQ(HMI_ISR_usart3_Q1), NULL);
+
+  /* definition and creation of CO2_ISR_usart6_Q1 */
+  osMessageQDef(CO2_ISR_usart6_Q1, 1, uint8_t);
+  CO2_ISR_usart6_Q1Handle = osMessageCreate(osMessageQ(CO2_ISR_usart6_Q1), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
 //  usart2_queue = xQueueCreate(USART2_QUEUE_LENGTH, USART2_QUEUE_ITEM_SIZE);
@@ -180,8 +198,12 @@ int main(void)
   uart2_Rx_handleHandle = osThreadCreate(osThread(uart2_Rx_handle), NULL);
 
   /* definition and creation of uart3_Rx_handle */
-  osThreadDef(uart3_Rx_handle, Start_uart3_Rx_handle, osPriorityNormal, 0, 128);
+  osThreadDef(uart3_Rx_handle, Start_uart3_Rx_handle, osPriorityNormal, 0, 512);
   uart3_Rx_handleHandle = osThreadCreate(osThread(uart3_Rx_handle), NULL);
+
+  /* definition and creation of CO2_u6_Rx_handl */
+  osThreadDef(CO2_u6_Rx_handl, Start_CO2_Rx_handle, osPriorityNormal, 0, 128);
+  CO2_u6_Rx_handlHandle = osThreadCreate(osThread(CO2_u6_Rx_handl), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -380,6 +402,9 @@ static void MX_USART3_UART_Init(void)
   }
   /* USER CODE BEGIN USART3_Init 2 */
 
+  /* Enable Rx Interrupt */
+  __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
+
   /* USER CODE END USART3_Init 2 */
 
 }
@@ -412,6 +437,9 @@ static void MX_USART6_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART6_Init 2 */
+
+  /* Enable Rx Interrupt */
+  __HAL_UART_ENABLE_IT(&huart6, UART_IT_RXNE);
 
   /* USER CODE END USART6_Init 2 */
 
@@ -587,6 +615,16 @@ void StartButton_Task(void const * argument)
   /* USER CODE END StartButton_Task */
 }
 
+
+void USART2_IRQHandler(void)
+{
+	uint8_t usart2_Rx_data = 0x00;
+
+	HAL_UART_IRQHandler(&huart2);
+	usart2_Rx_data = (uint8_t) huart2.Instance->DR;
+}
+
+
 /* USER CODE BEGIN Header_Start_uart2_Rx_handle */
 /**
 * @brief Function implementing the uart2_Rx_handle thread.
@@ -616,6 +654,24 @@ void Start_uart2_Rx_handle(void const * argument)
   /* USER CODE END Start_uart2_Rx_handle */
 }
 
+
+void USART3_IRQHandler(void)
+{
+
+	portBASE_TYPE xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+	uint8_t usart3_Rx_data = 0x00;
+
+	HAL_UART_IRQHandler(&huart3);
+	usart3_Rx_data = (uint8_t) huart3.Instance->DR;
+	if (pdPASS == xQueueSendToBackFromISR(HMI_ISR_usart3_Q1Handle, &usart3_Rx_data, &xHigherPriorityTaskWoken))
+	{
+		HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_SET);
+	}
+
+}
+
 /* USER CODE BEGIN Header_Start_uart3_Rx_handle */
 /**
 * @brief Function implementing the uart3_Rx_handle thread.
@@ -626,22 +682,222 @@ void Start_uart2_Rx_handle(void const * argument)
 void Start_uart3_Rx_handle(void const * argument)
 {
   /* USER CODE BEGIN Start_uart3_Rx_handle */
+	static uint8_t	usart3_counter = 0x00;
+	static uint8_t	HMI_LAMP_blinking_counter = 0x00;
+	static uint8_t	Modbus_Rx_status =  MB_FRAME_RX_IDLE;
+//	static uint8_t	N_bytes_to_finish_Rx = 0x00;
+	const portTickType xTicksToWait = 500 / portTICK_RATE_MS;
+
+	uint8_t Rx_buffer_from_ISR;
+	uint8_t Tx_buf_1 [] = {0x01, 0x01, 0x02, 0x00, 0x04, 0xB8, 0x3F};
+	uint8_t Tx_buf_2 [] = {0x01, 0x01, 0x02, 0x00, 0x00, 0xB9, 0xFC};
+	uint8_t Tx_buf_3 [] = {'O', 'k'};
+	uint8_t Tx_buf_4 [] = {'B', 'a', 'd'};
+	uint8_t uart3_Tx_result = 0x00;
   /* Infinite loop */
 	for(;;)
 	{
-//		if  (pdPASS == xSemaphoreTake(usart3_semHandle, portMAX_DELAY))
-//		{
-//
-//			uart_Tx_result = HAL_UART_Transmit(&huart3, uart3_Tx_buf, (sizeof(uart3_Tx_buf)/sizeof(uart3_Tx_buf[0])), 1000);
-//			if (HAL_OK == uart_Tx_result)
+		if(pdPASS == xQueueReceive(HMI_ISR_usart3_Q1Handle, &Rx_buffer_from_ISR, portMAX_DELAY )) /* xTicksToWait */
+		{
+			usart3_counter++;
+
+//			switch (Modbus_Rx_status)
 //			{
-//				HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_RESET);
-//				HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
+//
+//				case MB_FRAME_RX_IDLE:
+//						if ((HMI_SLAVE_ADDR_U3 == Rx_buffer_from_ISR) && (0x01 == usart3_counter))
+//						{
+//							Modbus_Rx_status = MB_FRAME_RX_STARTED;
+//							uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//						}
+//						else
+//						{
+//							usart3_counter = 0x00;
+//							uart3_Tx_result = HAL_UART_Transmit(&huart3, Tx_buf_4, (uint16_t)(sizeof(Tx_buf_4)/sizeof(Tx_buf_4[0])), 1000);
+//						}
+//				break;
+//				case MB_FRAME_RX_STARTED:
+//						if ((0x01 == Rx_buffer_from_ISR) && (0x02 == usart3_counter))
+//						{
+//							Modbus_Rx_status = MB_FRAME_RX_READ_COILS_FRAME;
+//							uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//						}
+//						else if ((0x04 == Rx_buffer_from_ISR) && (0x02 == usart3_counter))
+//						{
+//							Modbus_Rx_status = MB_FRAME_RX_READ_INREG_FRAME;
+//							uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//						}
+//						else
+//						{
+//							usart3_counter = 0x00;
+//							Modbus_Rx_status = MB_FRAME_RX_IDLE;
+//							uart3_Tx_result = HAL_UART_Transmit(&huart3, Tx_buf_4, (uint16_t)(sizeof(Tx_buf_4)/sizeof(Tx_buf_4[0])), 1000);
+//						}
+//				break;
+//				case MB_FRAME_RX_READ_COILS_FRAME:
+//							if(0x08 == usart3_counter)
+//							{
+//								/* Check CRC*/
+//								Modbus_Rx_status = MB_FRAME_RX_COILS_FRAME_FINISHED_OK;
+//								uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//							}
+//							else
+//							{
+//								uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//								uart3_Tx_result = HAL_UART_Transmit(&huart3, &Modbus_Rx_status, 1, 1000);
+//							}
+//
+//				break;
+//				case MB_FRAME_RX_READ_INREG_FRAME:
+//							if(0x08 == usart3_counter)
+//							{
+//								/* Check CRC*/
+//								Modbus_Rx_status = MB_FRAME_RX_INREG_FRAME_FINISHED_OK;
+//								uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//							}
+//							else
+//							{
+//								uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//								uart3_Tx_result = HAL_UART_Transmit(&huart3, &Modbus_Rx_status, 1, 1000);
+//							}
+//				break;
+//				default:
+//					Modbus_Rx_status = MB_FRAME_RX_IDLE;
+//					usart3_counter = 0x00;
+//					uart3_Tx_result = HAL_UART_Transmit(&huart3, &usart3_counter, 1, 1000);
+//
 //			}
-//		}
+
+//			if (((MB_FRAME_RX_COILS_FRAME_FINISHED_OK == Modbus_Rx_status) || (MB_FRAME_RX_INREG_FRAME_FINISHED_OK == Modbus_Rx_status)) && (0x08 == usart3_counter))
+			if (0x08 == usart3_counter)
+			{
+
+				usart3_counter = 0x00;
+				Modbus_Rx_status = MB_FRAME_RX_IDLE;
+
+				if (0x04 > HMI_LAMP_blinking_counter)
+				{
+					HMI_LAMP_blinking_counter++;
+					uart3_Tx_result = HAL_UART_Transmit(&huart3, Tx_buf_1, (uint16_t)(sizeof(Tx_buf_1)/sizeof(Tx_buf_1[0])), 1000);
+					if (HAL_OK != uart3_Tx_result)
+					{
+						Modbus_Rx_status = MB_FRAME_RX_IDLE;
+					}
+				}
+				else if ((HMI_LAMP_blinking_counter < 0x07) && (HMI_LAMP_blinking_counter >= 0x04))
+				{
+					HMI_LAMP_blinking_counter++;
+					uart3_Tx_result = HAL_UART_Transmit(&huart3, Tx_buf_2, (uint16_t)(sizeof(Tx_buf_2)/sizeof(Tx_buf_2[0])), 1000);
+					if (HAL_OK != uart3_Tx_result)
+					{
+						Modbus_Rx_status = MB_FRAME_RX_IDLE;
+					}
+				}
+				else if ((0x07 == HMI_LAMP_blinking_counter) && (0x07 <= HMI_LAMP_blinking_counter))
+				{
+					HMI_LAMP_blinking_counter = 0x00;
+					uart3_Tx_result = HAL_UART_Transmit(&huart3, Tx_buf_2, (uint16_t)(sizeof(Tx_buf_2)/sizeof(Tx_buf_2[0])), 1000);
+					if (HAL_OK != uart3_Tx_result)
+					{
+						Modbus_Rx_status = MB_FRAME_RX_IDLE;
+					}
+				}
+				else
+				{
+
+				}
+
+
+			}
+			else
+			{
+
+
+			}
+
+
+			HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+
+		}
+		else
+		{
+			usart3_counter = 0x00;
+			Modbus_Rx_status = MB_FRAME_RX_IDLE;
+			HAL_GPIO_WritePin(GPIOE, USART3_RT_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+		}
 
 	}
   /* USER CODE END Start_uart3_Rx_handle */
+}
+
+
+void USART6_IRQHandler(void)
+{
+
+	portBASE_TYPE xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+	uint8_t usart6_Rx_data = 0x00;
+
+	HAL_UART_IRQHandler(&huart6);
+	usart6_Rx_data = (uint8_t) huart6.Instance->DR;
+//	usart3_counter++;
+
+	if (pdPASS == xQueueSendToBackFromISR(CO2_ISR_usart6_Q1Handle, &usart6_Rx_data, &xHigherPriorityTaskWoken))
+	{
+		HAL_GPIO_WritePin(GPIOC, USART6_RT_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_SET);
+	}
+}
+
+
+/* USER CODE BEGIN Header_Start_CO2_Rx_handle */
+/**
+* @brief Function implementing the CO2_u6_Rx_handl thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_CO2_Rx_handle */
+void Start_CO2_Rx_handle(void const * argument)
+{
+  /* USER CODE BEGIN Start_CO2_Rx_handle */
+	uint8_t Rx_buffer_from_ISR;
+	uint8_t Tx_buf_1 [] = {'O', 'k'};
+	uint8_t Tx_buf_2 [] = {'B', 'a', 'd'};
+	uint8_t	uart6_Tx_result = 0x00;
+
+  /* Infinite loop */
+  for(;;)
+  {
+	 if(pdPASS == xQueueReceive(CO2_ISR_usart6_Q1Handle, &Rx_buffer_from_ISR, portMAX_DELAY))
+	 {
+		 if (0x01 == Rx_buffer_from_ISR)
+		 {
+			 uart6_Tx_result = HAL_UART_Transmit(&huart6, &Tx_buf_1, (uint16_t)(sizeof(Tx_buf_1)/sizeof(Tx_buf_1[0])), 1000);
+			 if (HAL_OK == uart6_Tx_result)
+			 {
+				 HAL_GPIO_WritePin(GPIOC, USART6_RT_Pin, GPIO_PIN_RESET);
+				 HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
+			 }
+		 }
+		 else
+		 {
+			 uart6_Tx_result = HAL_UART_Transmit(&huart6, Tx_buf_2, (uint16_t)(sizeof(Tx_buf_2)/sizeof(Tx_buf_2[0])), 1000);
+			 if (HAL_OK == uart6_Tx_result)
+			 {
+				 HAL_GPIO_WritePin(GPIOC, USART6_RT_Pin, GPIO_PIN_RESET);
+				 HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
+			 }
+		 }
+	 }
+	 else
+	 {
+
+	 }
+  }
+  /* USER CODE END Start_CO2_Rx_handle */
 }
 
  /**

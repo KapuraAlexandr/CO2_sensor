@@ -181,32 +181,32 @@ void TIM2_IRQHandler(void)
 /**
   * @brief This function handles USART2 global interrupt.
   */
-void USART2_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART2_IRQn 0 */
-////	static portBASE_TYPE xHigherPriorityTaskWoken;
-////	xHigherPriorityTaskWoken = pdFALSE;
+//void USART2_IRQHandler(void)
+//{
+//  /* USER CODE BEGIN USART2_IRQn 0 */
+//////	static portBASE_TYPE xHigherPriorityTaskWoken;
+//////	xHigherPriorityTaskWoken = pdFALSE;
+//////
+//  /* USER CODE END USART2_IRQn 0 */
+//  HAL_UART_IRQHandler(&huart2);
+//  /* USER CODE BEGIN USART2_IRQn 1 */
 ////
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-//
-  /* USER CODE END USART2_IRQn 1 */
-}
+//  /* USER CODE END USART2_IRQn 1 */
+//}
 
 /**
   * @brief This function handles USART3 global interrupt.
   */
-void USART3_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART3_IRQn 0 */
-//
-  /* USER CODE END USART3_IRQn 0 */
-  HAL_UART_IRQHandler(&huart3);
-  /* USER CODE BEGIN USART3_IRQn 1 */
-//
-  /* USER CODE END USART3_IRQn 1 */
-}
+//void USART3_IRQHandler(void)
+//{
+//  /* USER CODE BEGIN USART3_IRQn 0 */
+////
+//  /* USER CODE END USART3_IRQn 0 */
+//  HAL_UART_IRQHandler(&huart3);
+//  /* USER CODE BEGIN USART3_IRQn 1 */
+////
+//  /* USER CODE END USART3_IRQn 1 */
+//}
 
 /**
   * @brief This function handles USB On The Go FS global interrupt.
@@ -225,16 +225,16 @@ void OTG_FS_IRQHandler(void)
 /**
   * @brief This function handles USART6 global interrupt.
   */
-void USART6_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART6_IRQn 0 */
-
-  /* USER CODE END USART6_IRQn 0 */
-  HAL_UART_IRQHandler(&huart6);
-  /* USER CODE BEGIN USART6_IRQn 1 */
-
-  /* USER CODE END USART6_IRQn 1 */
-}
+//void USART6_IRQHandler(void)
+//{
+//  /* USER CODE BEGIN USART6_IRQn 0 */
+////
+//  /* USER CODE END USART6_IRQn 0 */
+//  HAL_UART_IRQHandler(&huart6);
+//  /* USER CODE BEGIN USART6_IRQn 1 */
+////
+//  /* USER CODE END USART6_IRQn 1 */
+//}
 
 /* USER CODE BEGIN 1 */
 

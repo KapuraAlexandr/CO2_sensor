@@ -2,8 +2,8 @@
 FREERTOS.BinarySemaphores01=usart2_sem,Dynamic,NULL
 FREERTOS.FootprintOK=true
 FREERTOS.IPParameters=Tasks01,FootprintOK,configUSE_IDLE_HOOK,BinarySemaphores01,Queues01
-FREERTOS.Queues01=usart3_MQ1,8,uint8_t,0,Dynamic,NULL,NULL
-FREERTOS.Tasks01=defaultTask,-3,128,StartDefaultTask,Default,NULL,Dynamic,NULL,NULL;myLED_Task,-2,128,StartLED_Task,Default,NULL,Dynamic,NULL,NULL;myButton_Task,-2,128,StartButton_Task,Default,NULL,Dynamic,NULL,NULL;uart2_Rx_handle,0,128,Start_uart2_Rx_handle,Default,NULL,Dynamic,NULL,NULL;uart3_Rx_handle,0,128,Start_uart3_Rx_handle,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.Queues01=HMI_ISR_usart3_Q1,1,uint8_t,0,Dynamic,NULL,NULL;CO2_ISR_usart6_Q1,1,uint8_t,0,Dynamic,NULL,NULL
+FREERTOS.Tasks01=defaultTask,-3,128,StartDefaultTask,Default,NULL,Dynamic,NULL,NULL;myLED_Task,-2,128,StartLED_Task,Default,NULL,Dynamic,NULL,NULL;myButton_Task,-2,128,StartButton_Task,Default,NULL,Dynamic,NULL,NULL;uart2_Rx_handle,0,128,Start_uart2_Rx_handle,Default,NULL,Dynamic,NULL,NULL;uart3_Rx_handle,0,128,Start_uart3_Rx_handle,Default,NULL,Dynamic,NULL,NULL;CO2_u6_Rx_handl,0,128,Start_CO2_Rx_handle,Default,NULL,Dynamic,NULL,NULL
 FREERTOS.configUSE_IDLE_HOOK=1
 File.Version=6
 GPIO.groupedBy=Group By Peripherals
