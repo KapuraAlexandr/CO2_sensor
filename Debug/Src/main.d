@@ -49,7 +49,7 @@ Src/main.o: ../Src/main.c ../Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
- ../Inc/usb_host.h
+ ../Inc/usb_host.h ../Src/CO2_helper.h
 
 ../Inc/main.h:
 
@@ -154,3 +154,5 @@ Src/main.o: ../Src/main.c ../Inc/main.h \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
 
 ../Inc/usb_host.h:
+
+../Src/CO2_helper.h:
