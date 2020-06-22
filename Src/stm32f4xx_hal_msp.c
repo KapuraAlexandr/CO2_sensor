@@ -278,6 +278,12 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
   {
   /* USER CODE BEGIN USART6_MspInit 0 */
 
+//	  GPIO_InitStruct.Pin = GPIO_PIN_7;
+//	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+//	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//	  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+
   /* USER CODE END USART6_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_USART6_CLK_ENABLE();
@@ -293,6 +299,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF8_USART6;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
+//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
 
     /* USART6 interrupt Init */
     HAL_NVIC_SetPriority(USART6_IRQn, 5, 0);
